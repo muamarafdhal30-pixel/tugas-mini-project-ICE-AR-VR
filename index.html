@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DAMARKURUNG-SURV 3D | Media Interaktif AR/VR &amp; GenAI Surveilans RS</title>
+<style>
+  :root {
+    --navy-950: #091524;
+    --navy-900: #0f2439;
+    --navy-800: #173552;
+    --navy-700: #214a70;
+    --amber-500: #f59e0b;
+    --amber-600: #d97706;
+    --amber-100: #fef3c7;
+    --teal-600: #0d9488;
+    --teal-100: #ccfbf1;
+    --crimson-600: #dc2626;
+    --crimson-100: #fee2e2;
+    --slate-50: #f8fafc;
+    --slate-100: #f1f5f9;
+    --slate-200: #e2e8f0;
+    --slate-600: #475569;
+    --slate-800: #1e293b;
+    --ivory: #fdfbf7;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+    background: var(--navy-950);
+    color: var(--slate-800);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+
+  /* Top Navigation & Telemetry Bar */
+  .topbar {
+    background: linear-gradient(90deg, var(--navy-950) 0%, var(--navy-900) 60%, #16304b 100%);
+    color: #fff;
+    padding: 10px 20px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 2px solid var(--amber-500);
+    z-index: 20;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .lantern-badge {
+    width: 38px;
+    height: 38px;
+    background: radial-gradient(circle, #fde68a 0%, var(--amber-500) 65%, #b45309 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 0 14px rgba(245, 158, 11, 0.55);
+    border: 1.5px solid #fef3c7;
+  }
+
+  .brand-text h1 {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    color: #fef3c7;
+  }
+
+  .brand-text p {
+    font-size: 11.5px;
+    color: #cbd5e1;
+  }
+
+  .mode-tabs {
+    display: flex;
+    gap: 6px;
+    background: rgba(255,255,255,0.07);
+    padding: 4px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+
+  .mode-btn {
+    background: transparent;
+    color: #cbd5e1;
+    border: none;
+    padding: 7px 13px;
+    border-radius: 7px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .mode-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .mode-btn.active {
+    background: var(--amber-500);
+    color: var(--navy-950);
+    box-shadow: 0 2px 8px rgba(245,158,11,0.4);
+  }
+
+  .telemetry {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .pill-stat {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.16);
+    padding: 5px 11px;
+    border-radius: 20px;
+    font-size: 12px;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .pill-stat strong { color: #fde68a; }
+
+  .icon-btn {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 6px 11px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .icon-btn:hover { background: rgba(255,255,255,0.2); }
+  .icon-btn.speaking { background: var(--teal-600); border-color: #5eead4; }
+
+  /* Main Workspace Layout */
+  .workspace {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 410px;
+    min-height: calc(100vh - 64px);
+  }
+
+  @media (max-width: 1024px) {
+    .workspace { grid-template-columns: 1fr; }
+  }
+
+  /* Viewport Stage (Left) */
+  .stage-area {
+    position: relative;
+    background: radial-gradient(circle at 50% 35%, #193757 0%, #0b192b 100%);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 520px;
+  }
+
+  .view-panel {
+    display: none;
+    flex: 1;
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+  .view-panel.active { display: flex; flex-direction: column; }
+
+  /* VR 3D Canvas & HUD */
+  #vrCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: grab;
+  }
+  #vrCanvas:active { cursor: grabbing; }
+
+  .vr-hud-top {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    right: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    pointer-events: none;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .case-banner {
+    background: rgba(9, 21, 36, 0.86);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(245, 158, 11, 0.45);
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 10px;
+    max-width: 470px;
+    pointer-events: auto;
+  }
+
+  .case-banner .tag {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    background: var(--amber-500);
+    color: var(--navy-950);
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-bottom: 5px;
+  }
+
+  .case-banner h2 { font-size: 14px; margin-bottom: 3px; color: #fef3c7; }
+  .case-banner p { font-size: 12px; color: #cbd5e1; line-height: 1.4; }
+
+  .cam-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    pointer-events: auto;
+  }
+
+  .preset-btn {
+    background: rgba(15, 36, 57, 0.88);
+    color: #e2e8f0;
+    border: 1px solid rgba(255,255,255,0.22);
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .preset-btn:hover, .preset-btn.active {
+    background: var(--amber-500);
+    color: var(--navy-950);
+    border-color: #fef3c7;
+  }
+
+  /* 3D Projected Hotspot Markers */
+  .hotspot-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .hs-marker {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(9, 21, 36, 0.92);
+    color: #fff;
+    border: 2px solid var(--amber-500);
+    padding: 5px 11px 5px 6px;
+    border-radius: 24px;
+    font-size: 11.5px;
+    font-weight: 600;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.45);
+    transition: transform 0.15s, border-color 0.2s;
+    white-space: nowrap;
+  }
+
+  .hs-marker:hover { transform: translate(-50%, -50%) scale(1.07); z-index: 10; }
+  .hs-marker.solved { border-color: #10b981; }
+  .hs-marker.active-hs { border-color: #38bdf8; box-shadow: 0 0 18px rgba(56, 189, 248, 0.7); }
+
+  .hs-num {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--amber-500);
+    color: var(--navy-950);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 12px;
+  }
+  .hs-marker.solved .hs-num { background: #10b981; color: #fff; }
+
+  .vr-hud-bottom {
+    position: absolute;
+    bottom: 12px;
+    left: 14px;
+    right: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+    font-size: 11.5px;
+    color: #cbd5e1;
+  }
+
+  .damarkurung-strip {
+    background: rgba(9, 21, 36, 0.88);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    padding: 7px 12px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    pointer-events: auto;
+  }
+
+  .dk-panels {
+    display: flex;
+    gap: 5px;
+  }
+
+  .dk-panel-box {
+    width: 26px;
+    height: 26px;
+    border-radius: 5px;
+    border: 1.5px solid #64748b;
+    background: #1e293b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #64748b;
+    transition: all 0.4s;
+  }
+
+  .dk-panel-box.lit {
+    border-color: #fde68a;
+    background: radial-gradient(circle, #fef08a 0%, #f59e0b 80%);
+    color: var(--navy-950);
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.8);
+    font-weight: 800;
+  }
+
+  /* WebAR Camera Mode */
+  .ar-stage {
+    position: relative;
+    flex: 1;
+    background: #050b14;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  #arVideo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+  }
+
+  .ar-sim-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 50% 50%, rgba(13, 148, 136, 0.14) 0%, transparent 65%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 36px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 36px),
+      linear-gradient(180deg, #0d1f33 0%, #07111d 100%);
+  }
+
+  .ar-reticle {
+    position: relative;
+    width: 340px;
+    max-width: 90%;
+    border: 2px dashed rgba(56, 189, 248, 0.65);
+    border-radius: 18px;
+    padding: 18px;
+    background: rgba(9, 21, 36, 0.72);
+    backdrop-filter: blur(4px);
+    text-align: center;
+    color: #fff;
+    z-index: 5;
+    box-shadow: 0 0 30px rgba(14, 165, 233, 0.25);
+  }
+
+  .ar-controls-bar {
+    background: var(--navy-900);
+    padding: 12px 16px;
+    border-top: 1px solid rgba(255,255,255,0.14);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    color: #fff;
+    z-index: 6;
+  }
+
+  /* GenAI Studio & Decision Matrix Views */
+  .studio-scroll {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+    background: var(--ivory);
+    color: var(--slate-800);
+  }
+
+  /* Right Inspector / Action Drawer */
+  .inspector {
+    background: var(--ivory);
+    border-left: 2px solid var(--slate-200);
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 64px);
+    overflow-y: auto;
+  }
+
+  .inspector-header {
+    background: var(--navy-900);
+    color: #fff;
+    padding: 14px 18px;
+    border-bottom: 3px solid var(--amber-500);
+  }
+
+  .inspector-header h3 { font-size: 14.5px; color: #fef3c7; margin-bottom: 3px; }
+  .inspector-header p { font-size: 12px; color: #cbd5e1; }
+
+  .inspector-body {
+    padding: 16px 18px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .card {
+    background: #fff;
+    border: 1px solid var(--slate-200);
+    border-radius: 10px;
+    padding: 13px 14px;
+  }
+
+  .card.local-wisdom {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    border: 1px solid #f59e0b;
+    border-left: 4px solid var(--amber-600);
+  }
+
+  .card h4 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--navy-900);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .card p, .card li {
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--slate-600);
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+    margin-top: 6px;
+  }
+
+  .data-table th, .data-table td {
+    border: 1px solid var(--slate-200);
+    padding: 6px 8px;
+    text-align: left;
+  }
+
+  .data-table th {
+    background: var(--navy-900);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .badge-danger {
+    background: var(--crimson-100);
+    color: var(--crimson-600);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 11px;
+  }
+
+  .badge-warn {
+    background: var(--amber-100);
+    color: #b45309;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 11px;
+  }
+
+  .badge-ok {
+    background: var(--teal-100);
+    color: var(--teal-600);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 11px;
+  }
+
+  .option-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .opt-btn {
+    text-align: left;
+    background: var(--slate-50);
+    border: 1.5px solid var(--slate-200);
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    line-height: 1.4;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--slate-800);
+  }
+
+  .opt-btn:hover {
+    border-color: var(--navy-700);
+    background: #eff6ff;
+  }
+
+  .opt-btn.selected-correct {
+    background: #ecfdf5;
+    border-color: #10b981;
+    color: #065f46;
+    font-weight: 600;
+  }
+
+  .opt-btn.selected-wrong {
+    background: #fef2f2;
+    border-color: #ef4444;
+    color: #991b1b;
+  }
+
+  .feedback-box {
+    padding: 11px 13px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    display: none;
+  }
+
+  .feedback-box.show { display: block; }
+  .feedback-box.good { background: #ecfdf5; border: 1px solid #6ee7b7; color: #065f46; }
+  .feedback-box.warn { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; }
+
+  .primary-btn {
+    background: var(--navy-900);
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+  }
+  .primary-btn:hover { background: var(--navy-700); }
+  .primary-btn.amber { background: var(--amber-600); color: #fff; }
+  .primary-btn.amber:hover { background: #b45309; }
+
+  .form-group { margin-bottom: 12px; }
+  .form-group label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--navy-900);
+    margin-bottom: 4px;
+  }
+  .form-group select, .form-group input, .form-group textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    font-size: 12.5px;
+    font-family: inherit;
+    background: #fff;
+  }
+
+  /* Modal */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(9, 21, 36, 0.78);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 50;
+  }
+  .modal-backdrop.open { display: flex; }
+
+  .modal-card {
+    background: var(--ivory);
+    max-width: 660px;
+    width: 100%;
+    max-height: 88vh;
+    overflow-y: auto;
+    border-radius: 14px;
+    border: 2px solid var(--amber-500);
+    padding: 22px;
+  }
+
+  .step-chips {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .step-chip {
+    background: var(--slate-100);
+    border: 1px solid var(--slate-200);
+    border-radius: 6px;
+    padding: 6px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .step-chip.done { background: #ecfdf5; border-color: #10b981; color: #065f46; }
+  .step-chip.curr { background: var(--navy-900); color: #fef3c7; border-color: var(--amber-500); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="lantern-badge" title="Filosofi Damarkurung Gresik">🏮</div>
+    <div class="brand-text">
+      <h1>DAMARKURUNG-SURV 3D &bull; Surveilans Keselamatan Pasien &amp; Mutu</h1>
+      <p>MK Surveilans Rumah Sakit (AR3C33) &bull; Minggu 10 (Sub-CPMK5) &bull; S1 Administrasi RS — Univ. Sunan Gresik</p>
+    </div>
+  </div>
+
+  <nav class="mode-tabs" aria-label="Mode Pembelajaran">
+    <button class="mode-btn active" data-view="vrView" onclick="switchView('vrView')">🏥 Ruang VR 3D</button>
+    <button class="mode-btn" data-view="arView" onclick="switchView('arView')">📱 WebAR Kamera</button>
+    <button class="mode-btn" data-view="genaiView" onclick="switchView('genaiView')">✨ GenAI Mutator</button>
+    <button class="mode-btn" data-view="evalView" onclick="switchView('evalView')">⚖️ Matriks Prioritas</button>
+  </nav>
+
+  <div class="telemetry">
+    <div class="pill-stat" title="Target durasi pembelajaran mandiri 15-20 menit">
+      ⏱️ <strong id="timerDisplay">00:00</strong> / 15–20 mnt
+    </div>
+    <div class="pill-stat" title="Panel Damarkurung yang berhasil dinyalakan">
+      🏮 Panel: <strong id="scoreDisplay">0 / 4</strong>
+    </div>
+    <button class="icon-btn" id="ttsBtn" onclick="toggleNarration()">🔊 Narasi Suara</button>
+    <button class="icon-btn" onclick="openModal('guideModal')">📖 Panduan &amp; Kearifan Lokal</button>
+  </div>
+</header>
+
+<main class="workspace">
+  <!-- LEFT STAGE -->
+  <section class="stage-area">
+
+    <!-- 1. VR 3D WARD VIEW -->
+    <div id="vrView" class="view-panel active">
+      <canvas id="vrCanvas"></canvas>
+
+      <div class="vr-hud-top">
+        <div class="case-banner">
+          <span class="tag" id="scenarioBadge">Kasus Aktif #1 &bull; Standar PMK 11/2017 &amp; 30/2022</span>
+          <h2 id="scenarioTitle">Ruang Rawat Inap Melati — RS Harapan Sehat</h2>
+          <p id="scenarioBrief">Pukul 02.30 WIB: Ny. Siti Aminah (Bed 4A) mengalami hipoglikemia berat (GDS 28 mg/dL) akibat salah suntik insulin 16 unit. Padahal skor INM Kepatuhan Identifikasi Pasien tercatat 99,2% dan laporan KNC = 0. Putar ruang 3D (seret layar) dan klik 4 titik audit!</p>
+        </div>
+
+        <div class="cam-presets">
+          <button class="preset-btn active" onclick="focusCamera(0, this)">Semua Ruangan</button>
+          <button class="preset-btn" onclick="focusCamera(1, this)">1. Bed 4A/4B</button>
+          <button class="preset-btn" onclick="focusCamera(2, this)">2. Kulkas Obat</button>
+          <button class="preset-btn" onclick="focusCamera(3, this)">3. Troli Darurat</button>
+          <button class="preset-btn" onclick="focusCamera(4, this)">4. Nurse Station</button>
+        </div>
+      </div>
+
+      <div class="hotspot-layer" id="hotspotLayer"></div>
+
+      <div class="vr-hud-bottom">
+        <div class="damarkurung-strip">
+          <span>🏮 <strong>Lentera Damarkurung Surveilans:</strong></span>
+          <div class="dk-panels">
+            <div class="dk-panel-box" id="dk1" title="Panel 1: Klasifikasi IKP">1</div>
+            <div class="dk-panel-box" id="dk2" title="Panel 2: Audit Obat High-Alert">2</div>
+            <div class="dk-panel-box" id="dk3" title="Panel 3: Deteksi Proxy Signal">3</div>
+            <div class="dk-panel-box" id="dk4" title="Panel 4: Validasi Bias INM">4</div>
+          </div>
+          <span id="dkStatusText" style="color:#fde68a;">Menyingkap sinyal bahaya di balik gelapnya data malam</span>
+        </div>
+        <div style="background:rgba(9,21,36,0.82);padding:6px 10px;border-radius:8px;pointer-events:auto;">
+          🖱️ Seret untuk rotasi 360° &bull; Scroll/klik titik nomor untuk inspeksi 3D
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. WEBAR CAMERA VIEW -->
+    <div id="arView" class="view-panel">
+      <div class="ar-stage">
+        <video id="arVideo" autoplay playsinline muted></video>
+        <div class="ar-sim-bg" id="arSimBg"></div>
+
+        <div class="ar-reticle">
+          <div style="font-size:11px;color:#38bdf8;font-weight:700;letter-spacing:0.8px;margin-bottom:6px;">
+            [ WEBAR CLINICAL OBJECT SCANNER ]
+          </div>
+          <canvas id="arObjectCanvas" width="280" height="190" style="display:block;margin:0 auto;"></canvas>
+          <h4 id="arObjTitle" style="font-size:14px;color:#fef3c7;margin-top:6px;">Vial Insulin Rapid-Acting (High-Alert)</h4>
+          <p id="arObjDesc" style="font-size:12px;color:#cbd5e1;margin-top:4px;line-height:1.45;">
+            Ditemukan tersimpan berhimpitan tanpa stiker merah High-Alert &amp; penanda LASA di rak kulkas Ruang Melati.
+          </p>
+          <div id="arXrayBadge" style="display:none;margin-top:8px;background:rgba(220,38,38,0.25);border:1px solid #f87171;padding:6px 9px;border-radius:7px;font-size:11.5px;color:#fecaca;">
+            ⚠️ <strong>X-Ray Audit PMK 11/2017:</strong> Risiko tinggi tertukar dosis! Kepatuhan penyimpanan turun 95% &rarr; 92% &rarr; 88% (Sinyal Sistemik).
+          </div>
+        </div>
+      </div>
+
+      <div class="ar-controls-bar">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="preset-btn active" onclick="selectArObject(0, this)">💉 Vial Insulin High-Alert</button>
+          <button class="preset-btn" onclick="selectArObject(1, this)">🪪 Gelang LASA Bed 4A/4B</button>
+          <button class="preset-btn" onclick="selectArObject(2, this)">🧪 Ampul Dekstrosa 40%</button>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <label style="font-size:11.5px;">Skala 3D:
+            <input type="range" min="0.7" max="1.4" step="0.1" value="1" oninput="arScale=parseFloat(this.value)" style="width:75px;vertical-align:middle;">
+          </label>
+          <button class="icon-btn" onclick="toggleArXray()">🔍 X-Ray Audit</button>
+          <button class="primary-btn amber" id="camToggleBtn" onclick="toggleRealCamera()">📷 Aktifkan Kamera Nyata</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. GENAI SCENARIO & VISUAL MUTATOR VIEW -->
+    <div id="genaiView" class="view-panel">
+      <div class="studio-scroll">
+        <div style="max-width:740px;margin:0 auto;">
+          <div class="card local-wisdom" style="margin-bottom:16px;">
+            <h4>✨ GenAI Surveillance Scenario &amp; 3D Environment Mutator</h4>
+            <p>Fitur Generative AI fungsional ini menghasilkan variasi kasus surveilans rumah sakit baru lengkap dengan <strong>dataset indikator mutu (PMK 30/2022)</strong>, <strong>sinyal tersembunyi (PMK 11/2017)</strong>, serta <strong>mengubah kondisi visual ruang 3D VR &amp; objek AR secara otomatis</strong> untuk latihan mandiri mahasiswa.</p>
+          </div>
+
+          <div class="card" style="margin-bottom:16px;">
+            <h4>⚙️ Parameter Generasi Kasus &amp; Visual 3D</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;">
+              <div class="form-group">
+                <label for="aiDomain">Fokus Kejadian &amp; Sinyal Surveilans:</label>
+                <select id="aiDomain">
+                  <option value="insulin">1. Kesalahan Obat High-Alert (Insulin &amp; Log D40%)</option>
+                  <option value="transfusion">2. Salah Identifikasi Pasien LASA (Transfusi Darah)</option>
+                  <option value="hais">3. Lonjakan Infeksi Luka Operasi (HAIs / SSI Bundle)</option>
+                  <option value="sepsis">4. Keterlambatan Respons Emergensi (Early Warning Score)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="aiComplexity">Tingkat Kompleksitas Bias &amp; Sinyal:</label>
+                <select id="aiComplexity">
+                  <option value="std">Standar — 1 Bias Observasi + 1 Proxy Signal</option>
+                  <option value="adv">Kompleks — Tekanan Akreditasi + Fenomena Gunung Es</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="aiWisdom">Integrasi Nilai Kearifan Lokal Gresik dalam Skenario:</label>
+              <select id="aiWisdom">
+                <option value="damarkurung">Damarkurung — Menyingkap Sinyal Bahaya di Balik Gelapnya Data Shift Malam</option>
+                <option value="tepaselira">Tepa Selira — Mengubah Budaya Menghukum (Blame) menjadi Keadilan Sistem (Just Culture)</option>
+                <option value="guyub">Guyub Rukun — Sinergi Lintas Unit (Farmasi, Keperawatan, Komite Mutu) dalam RCA</option>
+              </select>
+            </div>
+
+            <button class="primary-btn amber" style="width:100%;padding:12px;font-size:13.5px;" onclick="generateAiScenario()">
+              ✨ Generate Variasi Kasus Baru &amp; Mutasi Lingkungan 3D Otomatis
+            </button>
+          </div>
+
+          <div class="card" id="aiOutputCard">
+            <h4>📊 Dataset Surveilans Aktif (Hasil Sintesis GenAI)</h4>
+            <p id="aiNarrative" style="margin-bottom:10px;"></p>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Indikator / Sumber Data</th>
+                  <th>Bln 1</th>
+                  <th>Bln 2</th>
+                  <th>Bln 3</th>
+                  <th>Status Sinyal</th>
+                </tr>
+              </thead>
+              <tbody id="aiTableBody"></tbody>
+            </table>
+            <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
+              <button class="primary-btn" onclick="switchView('vrView')">🏥 Eksplorasi Kasus Ini di Ruang VR 3D &rarr;</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. DECISION & JUST-CULTURE EVALUATOR VIEW -->
+    <div id="evalView" class="view-panel">
+      <div class="studio-scroll">
+        <div style="max-width:740px;margin:0 auto;">
+          <div class="card" style="margin-bottom:16px;">
+            <h4>⚖️ Matriks Penentuan Prioritas &amp; Keputusan Manajerial (Sub-CPMK5)</h4>
+            <p style="margin-bottom:12px;">Sebagai Ketua Tim Mutu &amp; Keselamatan Pasien RS, tetapkan prioritas tindak lanjut berdasarkan bukti surveilans yang Anda temukan di ruang 3D/AR.</p>
+
+            <div class="form-group">
+              <label for="decPriority1">1. Apa masalah prioritas utama (Pita Risiko Merah) yang wajib segera diintervensi?</label>
+              <select id="decPriority1">
+                <option value="">-- Pilih Prioritas Utama --</option>
+                <option value="punitive">Menjatuhkan Surat Peringatan &amp; memutasi perawat jaga malam agar insiden tidak terulang</option>
+                <option value="system_signal">Kegagalan sistem pengelolaan obat High-Alert &amp; bias audit identifikasi lintas shift yang memicu hipoglikemia berulang</option>
+                <option value="admin_only">Memperbaiki dokumen laporan akreditasi bulan depan agar skor INM 99,2% tetap terjaga</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="decSignal">2. Bagaimana membedakan kejadian tunggal, noise/bias, dan sinyal sistemik pada kasus ini?</label>
+              <select id="decSignal">
+                <option value="">-- Pilih Analisis Sinyal --</option>
+                <option value="correct_sig">Kejadian Ny. Siti Aminah adalah KTD berat/Sentinel; skor INM 99,2% adalah bias seleksi shift pagi; lonjakan D40% (7 ampul) &amp; kepatuhan kulkas 88% adalah sinyal sistemik</option>
+                <option value="wrong_sig">Skor INM 99,2% adalah bukti sistem sudah baik, sehingga salah suntik insulin murni kelalaian individu yang berdiri sendiri</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="decCulture">3. Bagaimana penerapan prinsip Just Culture (PMK 11/2017) &amp; nilai Tepa Selira dalam tindak lanjut?</label>
+              <select id="decCulture">
+                <option value="">-- Pilih Kebijakan Manajerial --</option>
+                <option value="just_ok">Melaksanakan RCA maksimal 45 hari, open disclosure ke keluarga, menerapkan independent double-check, serta menghapus pemotongan remunerasi bagi pelapor KNC</option>
+                <option value="blame_ok">Memotong poin remunerasi seluruh perawat Ruang Melati sebagai efek jera kolektif</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="decReflection">4. Refleksi Singkat Mahasiswa (Bagaimana nilai Damarkurung / Tepa Selira mengubah cara pandang Anda sebagai manajer RS?):</label>
+              <textarea id="decReflection" rows="3" placeholder="Tuliskan refleksi analisis Anda di sini..."></textarea>
+            </div>
+
+            <button class="primary-btn amber" style="width:100%;padding:12px;" onclick="runGenAiEvaluation()">
+              🤖 Evaluasi Keputusan dengan GenAI Just-Culture Assessor
+            </button>
+          </div>
+
+          <div class="card" id="aiEvalResult" style="display:none;border-left:4px solid var(--teal-600);">
+            <h4>📋 Hasil Evaluasi &amp; Umpan Balik GenAI (Selaras Rubrik R10 &amp; PMK 11/2017)</h4>
+            <div id="aiEvalContent" style="margin-top:8px;font-size:13px;line-height:1.55;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- RIGHT INSPECTOR PANEL -->
+  <aside class="inspector">
+    <div class="inspector-header">
+      <h3 id="inspTitle">Titik Audit 1: Bed 4A &amp; 4B (Identifikasi Pasien)</h3>
+      <p id="inspSubtitle">Klik titik nomor di ruang 3D atau pilih tahap inspeksi di bawah</p>
+    </div>
+
+    <div class="inspector-body">
+      <div class="step-chips">
+        <div class="step-chip curr" id="chip1" onclick="selectHotspot(1)">Titik 1</div>
+        <div class="step-chip" id="chip2" onclick="selectHotspot(2)">Titik 2</div>
+        <div class="step-chip" id="chip3" onclick="selectHotspot(3)">Titik 3</div>
+        <div class="step-chip" id="chip4" onclick="selectHotspot(4)">Titik 4</div>
+      </div>
+
+      <div class="card">
+        <h4>🔎 Temuan Lapangan &amp; Bukti Surveilans</h4>
+        <p id="inspEvidence"></p>
+      </div>
+
+      <div class="card">
+        <h4>🧠 Pertanyaan Keputusan Aktif (Sub-CPMK5)</h4>
+        <p id="inspQuestion" style="font-weight:600;color:var(--navy-900);"></p>
+        <div class="option-list" id="inspOptions"></div>
+      </div>
+
+      <div class="feedback-box" id="inspFeedback"></div>
+
+      <div class="card local-wisdom">
+        <h4>🏮 Makna Kearifan Lokal Gresik</h4>
+        <p id="inspWisdom"></p>
+      </div>
+
+      <button class="primary-btn" id="nextStepBtn" onclick="goNextHotspot()">
+        Lanjut ke Titik Audit Berikutnya &rarr;
+      </button>
+    </div>
+  </aside>
+</main>
+
+<!-- GUIDE & LOCAL WISDOM MODAL -->
+<div class="modal-backdrop" id="guideModal">
+  <div class="modal-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h3 style="color:var(--navy-900);font-size:17px;">🏮 Panduan Pembelajaran Mandiri &amp; Integrasi Kearifan Lokal</h3>
+      <button class="icon-btn" style="background:var(--navy-900);" onclick="closeModal('guideModal')">✕ Tutup</button>
+    </div>
+    <p style="font-size:13px;line-height:1.55;margin-bottom:12px;">
+      Media interaktif <strong>DAMARKURUNG-SURV 3D</strong> dirancang untuk diselesaikan dalam <strong>15–20 menit</strong> guna mencapai <strong>Sub-CPMK5</strong> mata kuliah Surveilans Rumah Sakit (AR3C33): <em>membedakan kejadian tunggal, bias data, dan sinyal sistemik serta menentukan prioritas tindak lanjut</em> sesuai <strong>Permenkes No. 11/2017</strong> dan <strong>Permenkes No. 30/2022</strong>.
+    </p>
+    <div class="card local-wisdom" style="margin-bottom:12px;">
+      <h4>Filosofi Lokal Gresik yang Terintegrasi dalam Desain &amp; Interaksi</h4>
+      <ul style="padding-left:18px;margin-top:5px;">
+        <li><strong>Damarkurung (Lentera Cahaya Penuntun):</strong> Lentera khas Gresik yang menerangi kegelapan dan memuat panel pesan moral. Dalam ruang VR 3D, cahaya Damarkurung di <em>Nurse Station</em> awalnya redup akibat kabut bias data (INM 99,2% &amp; KNC = 0). Setiap kali Anda menyingkap sinyal bahaya tersembunyi di 4 titik interaksi, satu panel Damarkurung menyala keemasan.</li>
+        <li><strong>Tepa Selira &amp; Guyub Rukun:</strong> Nilai empati, keadilan proporsional, dan musyawarah masyarakat pesisir Gresik menjadi landasan penerapan <em>Just Culture</em>—menggeser respons menyalahkan individu perawat menuju perbaikan sistem keselamatan pasien secara kolaboratif.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Alur Belajar Mandiri (15–20 Menit)</h4>
+      <ol style="padding-left:18px;margin-top:5px;font-size:12.5px;line-height:1.55;">
+        <li><strong>Menit 0–3 (Orientasi):</strong> Baca kronologi kasus dan amati ruang rawat inap 3D (putar 360°).</li>
+        <li><strong>Menit 3–11 (Eksplorasi 4 Titik Aktif &amp; WebAR):</strong> Inspeksi 4 titik keputusan di ruang VR 3D dan pindai objek klinis 3D di tab <em>WebAR Kamera</em>.</li>
+        <li><strong>Menit 11–16 (Latihan Adaptif GenAI):</strong> Uji variasi kasus baru menggunakan <em>GenAI Mutator</em> untuk melihat perubahan tren dan ruang 3D secara dinamis.</li>
+        <li><strong>Menit 16–20 (Penentuan Prioritas &amp; Evaluasi):</strong> Susun matriks prioritas dan evaluasi keputusan Anda melalui <em>GenAI Just-Culture Assessor</em>.</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== STATE & DATA ====================
+let activeHotspot = 1;
+let solvedHotspots = new Set();
+let currentScenarioIndex = 0;
+let arObjectIndex = 0;
+let arScale = 1.0;
+let arXray = false;
+let arStream = null;
+let isSpeaking = false;
+let elapsedSeconds = 0;
+
+// Camera state for 3D VR Ward
+let camYaw = -0.62;
+let camPitch = 0.48;
+let camZoom = 1.0;
+let targetYaw = -0.62;
+let targetPitch = 0.48;
+let targetZoom = 1.0;
+let isDragging = false;
+let lastMouseX = 0;
+let lastMouseY = 0;
+
+const cameraPresets = [
+  { yaw: -0.62, pitch: 0.48, zoom: 1.0 },   // Overview
+  { yaw: -0.35, pitch: 0.44, zoom: 1.38 },  // Bed 4A/4B
+  { yaw: -1.15, pitch: 0.42, zoom: 1.42 },  // Kulkas High-Alert
+  { yaw: 0.35,  pitch: 0.45, zoom: 1.42 },  // Troli Darurat
+  { yaw: -0.65, pitch: 0.38, zoom: 1.35 }   // Nurse Station
+];
+
+const scenarios = [
+  {
+    badge: "Kasus Aktif #1 • Standar PMK 11/2017 & 30/2022",
+    title: "Ruang Rawat Inap Melati — RS Harapan Sehat",
+    brief: "Pukul 02.30 WIB: Ny. Siti Aminah (Bed 4A) mengalami hipoglikemia berat (GDS 28 mg/dL) akibat salah suntik insulin 16 unit. Padahal skor INM Kepatuhan Identifikasi Pasien tercatat 99,2% dan laporan KNC = 0.",
+    ampouleCount: 7,
+    fridgeClutter: true,
+    rows: [
+      ["INM: Kepatuhan Identifikasi Pasien", "98,5%", "99,0%", "99,2%", "Bias Audit Pagi (Noise)"],
+      ["Laporan KTD / Sentinel (PMK 11/2017)", "0", "0", "1", "KTD Berat / Potensi Sentinel"],
+      ["Laporan Nyaris Cedera (KNC)", "0", "0", "0", "Fenomena Gunung Es (Takut Lapor)"],
+      ["Log Farmasi: Pemakaian Dekstrosa 40%", "1 ampul", "2 ampul", "7 ampul", "Sinyal Bahaya Tersembunyi (Proxy)"],
+      ["Kepatuhan Kulkas Obat High-Alert", "95%", "92%", "88%", "Sinyal Kegagalan Sistem"]
+    ],
+    hotspots: {
+      1: {
+        title: "Titik Audit 1: Bed 4A & 4B (Kejadian Akut)",
+        subtitle: "Klasifikasi Insiden Keselamatan Pasien (Permenkes No. 11/2017)",
+        evidence: "Ny. Siti Aminah (Bed 4A) menerima suntikan insulin kerja cepat 16 unit yang seharusnya untuk Ny. Siti Aisyah (Bed 4B, nama mirip/LASA). Pasien mengalami penurunan kesadaran (GDS 28 mg/dL) dan harus dirawat intensif di ICU.",
+        question: "Berdasarkan Permenkes No. 11 Tahun 2017, bagaimana klasifikasi dan kewajiban pelaporan kejadian ini?",
+        options: [
+          { text: "Kejadian Nyaris Cedera (KNC) karena pasien berhasil diselamatkan di ICU.", correct: false, msg: "Kurang tepat. Pasien sudah terpapar obat dan mengalami cedera klinis berat (hipoglikemia hingga masuk ICU), sehingga bukan lagi KNC." },
+          { text: "Kejadian Tidak Diharapkan (KTD) Berat / berpotensi Sentinel Event; wajib dilaporkan internal ≤ 2x24 jam dan dilakukan RCA maksimal 45 hari.", correct: true, msg: "Tepat! Sesuai PMK 11/2017, salah pasien/obat yang mengakibatkan perawatan intensif (ICU) tergolong KTD berat/Sentinel yang wajib diinvestigasi melalui Root Cause Analysis (RCA)." },
+          { text: "Kondisi Potensial Cedera (KPC) sehingga cukup dicatat di buku operan shift perawat.", correct: false, msg: "Kurang tepat. KPC adalah kondisi sebelum terjadinya insiden, sedangkan pada kasus ini cedera pasien sudah terjadi." }
+        ],
+        wisdom: "Nilai Tepa Selira mengajarkan bahwa sebelum menghakimi perawat yang tertukar membaca nama 'Siti Aminah' dan 'Siti Aisyah', manajer wajib melihat desain sistem identifikasi LASA yang berisiko menjebak manusia."
+      },
+      2: {
+        title: "Titik Audit 2: Kulkas Obat High-Alert",
+        subtitle: "Identifikasi Kegagalan Laten Sistem Penyimpanan",
+        evidence: "Audit kepatuhan penyimpanan obat High-Alert menunjukkan tren penurunan konsisten selama 3 bulan: Juli (95%) → Agustus (92%) → September (88%). Kulkas obat Ruang Melati penuh sehingga vial insulin antar-pasien diletakkan berhimpitan tanpa stiker penanda.",
+        question: "Apa makna tren penurunan 95% → 92% → 88% dalam perspektif surveilans mutu?",
+        options: [
+          { text: "Variasi acak biasa (noise) karena selisihnya hanya beberapa persen tiap bulan.", correct: false, msg: "Keliru. Penurunan tiga periode berturut-turut di bawah standar 100% obat High-Alert merupakan tren memburuk yang sistematis." },
+          { text: "Sinyal peringatan dini (early warning signal) kegagalan sistem yang mendahului terjadinya insiden fatal.", correct: true, msg: "Benar! Tren penurunan kepatuhan penyimpanan obat High-Alert adalah sinyal sistemik yang seharusnya memicu intervensi sebelum jatuh korban." },
+          { text: "Masalah disiplin individu petugas farmasi yang tidak perlu dibahas Komite Mutu.", correct: false, msg: "Keliru. Kapasitas kulkas yang tidak memadai adalah masalah sarana dan tata kelola sistem rumah sakit." }
+        ],
+        wisdom: "Dalam filosofi Damarkurung, cahaya lentera berfungsi memperingatkan warga sebelum terperosok lubang. Tren 95% → 88% adalah cahaya peringatan yang terabaikan."
+      },
+      3: {
+        title: "Titik Audit 3: Troli Darurat & Log Farmasi",
+        subtitle: "Deteksi Sinyal Tersembunyi (Proxy Signal Detection)",
+        evidence: "Laporan KNC Ruang Melati tercatat 0 selama 6 bulan. Namun, data log farmasi menunjukkan pemakaian obat darurat Dekstrosa 40% (penawar hipoglikemia) melonjak dari 1 ampul (Juli), 2 ampul (Agustus), menjadi 7 ampul (September)—6 di antaranya dipakai tengah malam.",
+        question: "Apa kesimpulan surveilans paling akurat dari temuan 7 ampul Dekstrosa 40% tersebut?",
+        options: [
+          { text: "Proxy signal (sinyal tersembunyi) bahwa episode hipoglikemia akibat salah dosis sudah berulang kali terjadi namun ditutupi (fenomena gunung es).", correct: true, msg: "Sangat tepat! Lonjakan D40% di malam hari adalah bukti objektif bahwa KNC/KTC sebenarnya sering terjadi, namun tidak dilaporkan karena staf takut sanksi." },
+          { text: "Stok farmasi berlebihan sehingga perawat lebih sering menggunakan Dekstrosa 40%.", correct: false, msg: "Tidak logis. Dekstrosa 40% adalah obat emergensi dengan indikasi ketat untuk hipoglikemia berat." },
+          { text: "Tidak berkaitan dengan surveilans keselamatan pasien karena berasal dari log farmasi.", correct: false, msg: "Keliru. Surveilans rumah sakit yang efektif wajib melakukan triangulasi data lintas sumber (SIMRS, farmasi, dan laporan IKP)." }
+        ],
+        wisdom: "Panel Damarkurung ke-3 menyala! Anda berhasil menembus kabut 'zero incident' dengan membaca jejak logistik farmasi di malam hari."
+      },
+      4: {
+        title: "Titik Audit 4: Nurse Station & Papan INM",
+        subtitle: "Validasi Bias Data Indikator Nasional Mutu (PMK 30/2022)",
+        evidence: "Papan mutu menampilkan INM Kepatuhan Identifikasi Pasien sebesar 99,2%. Namun, audit ternyata hanya dilakukan setiap hari Selasa pukul 09.00–11.00 WIB (shift pagi), sementara pada shift malam 2 perawat junior menangani 28 pasien sekaligus.",
+        question: "Mengapa angka INM 99,2% gagal mendeteksi risiko di Ruang Melati?",
+        options: [
+          { text: "Terjadi bias seleksi/observasi (sampling & Hawthorne bias) karena audit tidak mewakili shift malam dengan beban kerja tinggi.", correct: true, msg: "Tepat sekali! Sesuai PMK 30/2022, sampel audit INM harus representatif lintas shift (pagi, sore, malam) agar tidak menciptakan ilusi keamanan." },
+          { text: "Target INM menurut Permenkes 30/2022 memang cukup diukur pada jam kerja kantor saja.", correct: false, msg: "Salah. Pelayanan rawat inap berlangsung 24 jam sehingga pengukuran indikator mutu wajib mencerminkan seluruh shift." },
+          { text: "Karena perawat junior tidak perlu diaudit kepatuhan identifikasi pasiennya.", correct: false, msg: "Salah. Justru perawat baru membutuhkan supervisi dan sistem double-check yang lebih kuat." }
+        ],
+        wisdom: "Keempat panel Damarkurung telah menyala terang! Dengan semangat Guyub Rukun, saatnya menyusun prioritas perbaikan sistem lintas unit."
+      }
+    }
+  },
+  {
+    badge: "Kasus Variasi GenAI #2 • Transfusi Darah & Identifikasi LASA",
+    title: "Ruang Bedah Flamboyan — RS Sunan Husada",
+    brief: "Pukul 23.45 WIB: Tn. Ahmad Fauzi (Bed 2A) hampir menerima kantong darah Golongan B milik Tn. Ahmad Fikri (Bed 2B), namun terdeteksi perawat saat memasang selang. INM Identifikasi Pasien tercatat 98,9%, sementara permintaan obat antihistamin injeksi darurat naik 4x lipat.",
+    ampouleCount: 6,
+    fridgeClutter: true,
+    rows: [
+      ["INM: Kepatuhan Identifikasi Pasien", "98,0%", "98,6%", "98,9%", "Bias Observasi Shift Pagi"],
+      ["Laporan KNC Reaksi/Salah Transfusi", "0", "0", "1", "Under-reporting (Takut Sanksi)"],
+      ["Log Farmasi: Difenhidramin IV Darurat", "1 vial", "1 vial", "6 vial", "Proxy Signal Reaksi Transfusi Ringan"],
+      ["Kepatuhan Double-Check Kantong Darah", "94%", "90%", "84%", "Sinyal Penurunan Kepatuhan SOP"],
+      ["Rasio Perawat : Pasien Shift Malam", "1 : 8", "1 : 10", "1 : 14", "Beban Kerja Kritis"]
+    ],
+    hotspots: {
+      1: {
+        title: "Titik Audit 1: Bed 2A & 2B (Nyaris Salah Transfusi)",
+        subtitle: "Klasifikasi Insiden Keselamatan Pasien (PMK 11/2017)",
+        evidence: "Kantong darah Golongan B untuk Tn. Ahmad Fikri (Bed 2B) sempat dibawa ke sisi tempat tidur Tn. Ahmad Fauzi (Bed 2A, Golongan O), namun terhenti sebelum darah menetes ke pembuluh darah pasien.",
+        question: "Apa kategori insiden ini menurut Permenkes No. 11 Tahun 2017?",
+        options: [
+          { text: "Kejadian Nyaris Cedera (KNC / Near Miss) karena paparan belum sampai ke pasien, namun berpotensi fatal jika lolos.", correct: true, msg: "Tepat! Insiden sudah terjadi (kantong darah tertukar dibawa ke pasien) tetapi belum terpapar ke tubuh pasien sehingga masuk kategori KNC." },
+          { text: "Sentinel Event karena melibatkan produk darah.", correct: false, msg: "Belum menjadi Sentinel karena transfusi berhasil dicegah sebelum masuk ke tubuh pasien." },
+          { text: "Bukan insiden karena pasien tidak dirugikan.", correct: false, msg: "Keliru. KNC wajib dilaporkan sebagai bahan pembelajaran sistem." }
+        ],
+        wisdom: "Filosofi Damarkurung mengingatkan: menangkap nyaris cedera (KNC) adalah berkah cahaya yang mencegah tragedi nyata."
+      },
+      2: {
+        title: "Titik Audit 2: Tempat Penyimpanan Darah & Formulir LASA",
+        subtitle: "Audit Kepatuhan Double-Check",
+        evidence: "Kepatuhan verifikasi dua petugas (independent double-check) sebelum transfusi turun dari 94% menjadi 84% pada bulan ke-3 akibat penumpukan formulir permintaan darah tanpa penanda LASA.",
+        question: "Tindakan manajerial apa yang paling tepat memutus akar masalah ini?",
+        options: [
+          { text: "Mewajibkan verifikasi silang dua petugas + pemindaian barcode gelang sebelum membuka segel kantong darah.", correct: true, msg: "Tepat! Penguatan penghalang sistem (forcing function) mencegah kesalahan manusia terulang." },
+          { text: "Melarang pasien dengan nama depan 'Ahmad' dirawat di kamar yang sama.", correct: false, msg: "Tidak realistis secara operasional rumah sakit." },
+          { text: "Menunda pelaporan hingga survei akreditasi selesai.", correct: false, msg: "Bertentangan dengan etika keselamatan pasien." }
+        ],
+        wisdom: "Tepa Selira menuntut sistem kerja yang melindungi petugas dari kekeliruan saat kelelahan di shift malam."
+      },
+      3: {
+        title: "Titik Audit 3: Troli Darurat & Log Antihistamin",
+        subtitle: "Deteksi Sinyal Tersembunyi (Proxy Signal)",
+        evidence: "Pemakaian injeksi Difenhidramin darurat untuk mengatasi reaksi alergi/transfusi ringan melonjak dari 1 vial menjadi 6 vial di malam hari tanpa ada laporan insiden transfusi.",
+        question: "Apa arti lonjakan pemakaian Difenhidramin IV tersebut bagi analis surveilans?",
+        options: [
+          { text: "Sinyal tersembunyi adanya reaksi transfusi atau kesalahan identifikasi minor yang ditangani diam-diam tanpa pelaporan IKP.", correct: true, msg: "Benar! Triangulasi log farmasi mengungkap masalah mutu yang tidak tercatat pada sistem pelaporan sukarela." },
+          { text: "Peningkatan kasus flu biasa di bangsal bedah.", correct: false, msg: "Tidak sesuai konteks klinis pemberian injeksi emergensi malam hari." },
+          { text: "Variasi normal yang dapat diabaikan.", correct: false, msg: "Lonjakan 6x lipat di atas baseline adalah sinyal statistik yang wajib diinvestigasi." }
+        ],
+        wisdom: "Cahaya Damarkurung menembus lapisan data administratif menuju realitas klinis di lapangan."
+      },
+      4: {
+        title: "Titik Audit 4: Nurse Station & Beban Shift Malam",
+        subtitle: "Validasi Bias Data INM (PMK 30/2022)",
+        evidence: "Skor INM 98,9% diperoleh dari observasi jam 10 pagi saat rasio perawat 1:5, sedangkan saat kejadian rasio shift malam mencapai 1:14.",
+        question: "Rekomendasi strategis apa yang diajukan Komite Mutu kepada Direktur RS?",
+        options: [
+          { text: "Redesain jadwal audit INM agar mencakup shift malam serta rekomendasi penyesuaian rasio ketenagaan shift malam.", correct: true, msg: "Tepat dan sesuai batas kewenangan Komite Mutu!" },
+          { text: "Memecat kepala ruang bedah secara langsung.", correct: false, msg: "Komite Mutu tidak berwenang memecat SDM, dan pendekatan punitif merusak budaya keselamatan." },
+          { text: "Menghentikan pengukuran INM sementara waktu.", correct: false, msg: "Melanggar kewajiban pelaporan nasional PMK 30/2022." }
+        ],
+        wisdom: "Guyub Rukun menyatukan Komite Mutu, Farmasi, dan Keperawatan dalam satu solusi sistemik."
+      }
+    }
+  }
+];
+
+const arObjects = [
+  {
+    title: "Vial Insulin Rapid-Acting (Obat High-Alert)",
+    desc: "Dosis 16 unit disuntikkan ke pasien yang keliru. Dalam tampilan AR tampak vial bening tanpa stiker merah 'HIGH ALERT' dan tersimpan berdesakan.",
+    xray: "⚠️ X-Ray Audit PMK 11/2017: Obat High-Alert wajib disimpan terpisah, diberi stiker merah, dan diverifikasi oleh 2 petugas (Independent Double-Check) sebelum penyuntikan.",
+    color: "#dc2626",
+    shape: "vial"
+  },
+  {
+    title: "Gelang Identitas LASA (Look-Alike Sound-Alike)",
+    desc: "Bed 4A: Ny. Siti Aminah (62 th) vs Bed 4B: Ny. Siti Aisyah (58 th). Kemiripan nama dalam satu kamar tanpa penanda peringatan risiko tinggi.",
+    xray: "⚠️ X-Ray Audit PMK 30/2022: Verifikasi identitas wajib menggunakan minimal 2 dari 4 identitas aktif (Nama Lengkap, Tanggal Lahir, No. RM, NIK) — dilarang menggunakan nomor kamar/bed!",
+    color: "#2563eb",
+    shape: "band"
+  },
+  {
+    title: "Ampul Dekstrosa 40% (Proxy Signal Farmasi)",
+    desc: "Pemakaian melonjak dari 1–2 ampul/bulan menjadi 7 ampul di bulan September (6 ampul dipakai pukul 22.00–05.00 WIB).",
+    xray: "⚠️ X-Ray Signal Detection: Lonjakan obat penawar hipoglikemia adalah sinyal sekunder kuat bahwa kesalahan dosis insulin berulang kali terjadi namun tidak masuk laporan KNC.",
+    color: "#d97706",
+    shape: "ampoule"
+  }
+];
+
+// ==================== INITIALIZATION & TIMER ====================
+window.addEventListener('DOMContentLoaded', () => {
+  renderScenarioData();
+  selectHotspot(1);
+  initCanvasControls();
+  requestAnimationFrame(renderVrLoop);
+  requestAnimationFrame(renderArObjectLoop);
+
+  setInterval(() => {
+    elapsedSeconds++;
+    const m = String(Math.floor(elapsedSeconds / 60)).padStart(2, '0');
+    const s = String(elapsedSeconds % 60).padStart(2, '0');
+    document.getElementById('timerDisplay').textContent = `${m}:${s}`;
+  }, 1000);
+});
+
+function switchView(viewId) {
+  document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(viewId).classList.add('active');
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.view === viewId);
+  });
+  playTone(520, 0.08);
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ==================== AUDIO & TTS ENGINE ====================
+function playTone(freq, duration) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  } catch (e) {}
+}
+
+function toggleNarration() {
+  const btn = document.getElementById('ttsBtn');
+  if (!('speechSynthesis' in window)) {
+    alert('Peramban Anda tidak mendukung fitur pembaca suara otomatis.');
+    return;
+  }
+  if (isSpeaking) {
+    window.speechSynthesis.cancel();
+    isSpeaking = false;
+    btn.classList.remove('speaking');
+    btn.textContent = '🔊 Narasi Suara';
+    return;
+  }
+  const sc = scenarios[currentScenarioIndex];
+  const hs = sc.hotspots[activeHotspot];
+  const text = `${sc.title}. ${sc.brief}. Saat ini Anda memeriksa ${hs.title}. ${hs.evidence}. Pertanyaannya: ${hs.question}`;
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'id-ID';
+  utter.rate = 1.02;
+  utter.onend = () => {
+    isSpeaking = false;
+    btn.classList.remove('speaking');
+    btn.textContent = '🔊 Narasi Suara';
+  };
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utter);
+  isSpeaking = true;
+  btn.classList.add('speaking');
+  btn.textContent = '⏹️ Hentikan Suara';
+}
+
+// ==================== 3D VR WARD ENGINE ====================
+const vrCanvas = document.getElementById('vrCanvas');
+const vrCtx = vrCanvas.getContext('2d');
+let projectedHotspots = [];
+
+function initCanvasControls() {
+  vrCanvas.addEventListener('mousedown', e => {
+    isDragging = true;
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+  });
+  window.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    const dx = e.clientX - lastMouseX;
+    const dy = e.clientY - lastMouseY;
+    targetYaw += dx * 0.007;
+    targetPitch = Math.max(0.18, Math.min(1.05, targetPitch + dy * 0.005));
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+  });
+  window.addEventListener('mouseup', () => { isDragging = false; });
+
+  vrCanvas.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) {
+      isDragging = true;
+      lastMouseX = e.touches[0].clientX;
+      lastMouseY = e.touches[0].clientY;
+    }
+  }, { passive: true });
+  vrCanvas.addEventListener('touchmove', e => {
+    if (!isDragging || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - lastMouseX;
+    const dy = e.touches[0].clientY - lastMouseY;
+    targetYaw += dx * 0.008;
+    targetPitch = Math.max(0.18, Math.min(1.05, targetPitch + dy * 0.006));
+    lastMouseX = e.touches[0].clientX;
+    lastMouseY = e.touches[0].clientY;
+  }, { passive: true });
+  vrCanvas.addEventListener('touchend', () => { isDragging = false; });
+
+  vrCanvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    targetZoom = Math.max(0.7, Math.min(1.75, targetZoom - e.deltaY * 0.0008));
+  }, { passive: false });
+}
+
+function focusCamera(idx, btnEl) {
+  const p = cameraPresets[idx] || cameraPresets[0];
+  targetYaw = p.yaw;
+  targetPitch = p.pitch;
+  targetZoom = p.zoom;
+  if (btnEl) {
+    document.querySelectorAll('.cam-presets .preset-btn').forEach(b => b.classList.remove('active'));
+    btnEl.classList.add('active');
+  }
+  if (idx >= 1 && idx <= 4) selectHotspot(idx);
+}
+
+function project3D(x, y, z, cx, cy, scale) {
+  const cosY = Math.cos(camYaw), sinY = Math.sin(camYaw);
+  const rx = x * cosY - z * sinY;
+  const rz = x * sinY + z * cosY;
+
+  const cosP = Math.cos(camPitch), sinP = Math.sin(camPitch);
+  const ry = y * cosP - rz * sinP;
+  const rz2 = y * sinP + rz * cosP;
+
+  const fov = 680;
+  const dist = 560;
+  const perspective = fov / (fov + rz2 + dist);
+  return {
+    x: cx + rx * scale * perspective,
+    y: cy - ry * scale * perspective,
+    depth: rz2,
+    p: perspective
+  };
+}
+
+function draw3DBox(ctx, x, y, z, w, h, d, colors, cx, cy, scale) {
+  const hw = w / 2, hd = d / 2;
+  const verts = [
+    [x - hw, y,     z - hd],
+    [x + hw, y,     z - hd],
+    [x + hw, y,     z + hd],
+    [x - hw, y,     z + hd],
+    [x - hw, y + h, z - hd],
+    [x + hw, y + h, z - hd],
+    [x + hw, y + h, z + hd],
+    [x - hw, y + h, z + hd]
+  ];
+  const pts = verts.map(v => project3D(v[0], v[1], v[2], cx, cy, scale));
+
+  const faces = [
+    { idx: [4, 5, 6, 7], col: colors.top },
+    { idx: [3, 2, 6, 7], col: colors.front },
+    { idx: [1, 2, 6, 5], col: colors.right },
+    { idx: [0, 3, 7, 4], col: colors.left },
+    { idx: [0, 1, 5, 4], col: colors.back }
+  ];
+
+  faces.sort((a, b) => {
+    const da = a.idx.reduce((s, i) => s + pts[i].depth, 0) / 4;
+    const db = b.idx.reduce((s, i) => s + pts[i].depth, 0) / 4;
+    return db - da;
+  });
+
+  faces.forEach(f => {
+    ctx.beginPath();
+    ctx.moveTo(pts[f.idx[0]].x, pts[f.idx[0]].y);
+    for (let i = 1; i < 4; i++) ctx.lineTo(pts[f.idx[i]].x, pts[f.idx[i]].y);
+    ctx.closePath();
+    ctx.fillStyle = f.col;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(15, 23, 42, 0.35)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  });
+}
+
+function renderVrLoop(now) {
+  const rect = vrCanvas.parentElement.getBoundingClientRect();
+  if (vrCanvas.width !== rect.width || vrCanvas.height !== rect.height) {
+    vrCanvas.width = rect.width;
+    vrCanvas.height = rect.height;
+  }
+
+  camYaw += (targetYaw - camYaw) * 0.1;
+  camPitch += (targetPitch - camPitch) * 0.1;
+  camZoom += (targetZoom - camZoom) * 0.1;
+
+  const w = vrCanvas.width;
+  const h = vrCanvas.height;
+  const cx = w / 2;
+  const cy = h * 0.54;
+  const scale = Math.min(w, h) * 0.0023 * camZoom;
+
+  vrCtx.clearRect(0, 0, w, h);
+
+  // Floor base
+  draw3DBox(vrCtx, 0, -14, 0, 440, 14, 340, {
+    top: '#1e3a5f', front: '#0f2439', right: '#16304b', left: '#16304b', back: '#0f2439'
+  }, cx, cy, scale);
+
+  // Floor tiles grid
+  vrCtx.strokeStyle = 'rgba(148, 163, 184, 0.16)';
+  vrCtx.lineWidth = 1;
+  for (let gx = -200; gx <= 200; gx += 40) {
+    const p1 = project3D(gx, 0.5, -160, cx, cy, scale);
+    const p2 = project3D(gx, 0.5, 160, cx, cy, scale);
+    vrCtx.beginPath(); vrCtx.moveTo(p1.x, p1.y); vrCtx.lineTo(p2.x, p2.y); vrCtx.stroke();
+  }
+  for (let gz = -160; gz <= 160; gz += 40) {
+    const p1 = project3D(-200, 0.5, gz, cx, cy, scale);
+    const p2 = project3D(200, 0.5, gz, cx, cy, scale);
+    vrCtx.beginPath(); vrCtx.moveTo(p1.x, p1.y); vrCtx.lineTo(p2.x, p2.y); vrCtx.stroke();
+  }
+
+  // Back & Left Hospital Walls
+  draw3DBox(vrCtx, 0, 0, -165, 440, 135, 10, {
+    top: '#334155', front: '#243b55', right: '#1e334a', left: '#1e334a', back: '#102a43'
+  }, cx, cy, scale);
+  draw3DBox(vrCtx, -215, 0, 0, 10, 135, 340, {
+    top: '#334155', front: '#1e334a', right: '#2c4866', left: '#102a43', back: '#1e334a'
+  }, cx, cy, scale);
+
+  // 1. BED 4A & BED 4B
+  const bedColorsA = { top: '#f8fafc', front: '#cbd5e1', right: '#94a3b8', left: '#94a3b8', back: '#cbd5e1' };
+  draw3DBox(vrCtx, -110, 0, -65, 95, 28, 48, bedColorsA, cx, cy, scale);
+  draw3DBox(vrCtx, -145, 28, -65, 22, 10, 36, { top: '#fde68a', front: '#f59e0b', right: '#d97706', left: '#d97706', back: '#d97706' }, cx, cy, scale);
+
+  draw3DBox(vrCtx, -110, 0, 20, 95, 28, 48, bedColorsA, cx, cy, scale);
+  draw3DBox(vrCtx, -145, 28, 20, 22, 10, 36, { top: '#bae6fd', front: '#38bdf8', right: '#0284c7', left: '#0284c7', back: '#0284c7' }, cx, cy, scale);
+
+  const pulse = Math.sin(now * 0.008) * 4;
+  draw3DBox(vrCtx, -155, 38, -22, 18, 26, 22, { top: '#0f172a', front: '#1e293b', right: '#dc2626', left: '#0f172a', back: '#0f172a' }, cx, cy, scale);
+
+  // 2. KULKAS OBAT HIGH-ALERT
+  const fridgeSolved = solvedHotspots.has(2);
+  draw3DBox(vrCtx, -165, 0, -125, 44, 96, 42, {
+    top: '#e2e8f0',
+    front: fridgeSolved ? '#0d9488' : '#38bdf8',
+    right: '#94a3b8',
+    left: '#cbd5e1',
+    back: '#64748b'
+  }, cx, cy, scale);
+  draw3DBox(vrCtx, -165, 52, -102, 26, 14, 10, {
+    top: fridgeSolved ? '#10b981' : '#ef4444',
+    front: fridgeSolved ? '#059669' : '#dc2626',
+    right: '#b91c1c', left: '#b91c1c', back: '#b91c1c'
+  }, cx, cy, scale);
+
+  // 3. TROLI DARURAT & AMPUL DEKSTROSA 40%
+  draw3DBox(vrCtx, 115, 0, 65, 58, 44, 42, {
+    top: '#f1f5f9', front: '#dc2626', right: '#b91c1c', left: '#ef4444', back: '#991b1b'
+  }, cx, cy, scale);
+  const ampCount = scenarios[currentScenarioIndex].ampouleCount;
+  for (let i = 0; i < ampCount; i++) {
+    const ox = 96 + i * 6.5;
+    const glowH = 12 + Math.sin(now * 0.006 + i) * 2.5;
+    draw3DBox(vrCtx, ox, 44, 65, 4.5, glowH, 4.5, {
+      top: '#fef08a', front: '#f59e0b', right: '#d97706', left: '#d97706', back: '#b45309'
+    }, cx, cy, scale);
+  }
+
+  // 4. NURSE STATION & DAMARKURUNG LANTERN
+  draw3DBox(vrCtx, 105, 0, -85, 110, 42, 52, {
+    top: '#f8fafc', front: '#1e3a8a', right: '#172554', left: '#1d4ed8', back: '#1e3a8a'
+  }, cx, cy, scale);
+
+  draw3DBox(vrCtx, 105, 68, -155, 86, 48, 6, {
+    top: '#0f172a', front: '#0d9488', right: '#0f172a', left: '#0f172a', back: '#0f172a'
+  }, cx, cy, scale);
+
+  const litRatio = solvedHotspots.size / 4;
+  const dkFloat = 78 + Math.sin(now * 0.003) * 4;
+  draw3DBox(vrCtx, 105, dkFloat, -85, 26, 30, 26, {
+    top: '#78350f',
+    front: litRatio > 0 ? '#fbbf24' : '#475569',
+    right: litRatio >= 0.5 ? '#f59e0b' : '#334155',
+    left: litRatio >= 0.75 ? '#fde047' : '#334155',
+    back: litRatio === 1 ? '#fef08a' : '#1e293b'
+  }, cx, cy, scale);
+
+  const hsCoords = [
+    { id: 1, label: "1. Bed 4A/4B (IKP)", x: -110, y: 45 + pulse, z: -22 },
+    { id: 2, label: "2. Kulkas High-Alert", x: -165, y: 105, z: -115 },
+    { id: 3, label: `3. Troli D40% (${ampCount} Ampul)`, x: 115, y: 66, z: 65 },
+    { id: 4, label: "4. Nurse Station & INM", x: 105, y: dkFloat + 36, z: -85 }
+  ];
+
+  const layer = document.getElementById('hotspotLayer');
+  if (layer.children.length !== 4) {
+    layer.innerHTML = '';
+    hsCoords.forEach(item => {
+      const el = document.createElement('button');
+      el.className = 'hs-marker';
+      el.id = `hsPin${item.id}`;
+      el.onclick = () => selectHotspot(item.id);
+      el.innerHTML = `<span class="hs-num">${item.id}</span><span>${item.label}</span>`;
+      layer.appendChild(el);
+    });
+  }
+
+  hsCoords.forEach(item => {
+    const p = project3D(item.x, item.y, item.z, cx, cy, scale);
+    const el = document.getElementById(`hsPin${item.id}`);
+    el.style.left = `${p.x}px`;
+    el.style.top = `${p.y}px`;
+    el.querySelector('span:last-child').textContent = item.label;
+    el.classList.toggle('solved', solvedHotspots.has(item.id));
+    el.classList.toggle('active-hs', activeHotspot === item.id);
+  });
+
+  requestAnimationFrame(renderVrLoop);
+}
+
+// ==================== HOTSPOT INSPECTOR & PROGRESSION ====================
+function selectHotspot(id) {
+  activeHotspot = id;
+  const sc = scenarios[currentScenarioIndex];
+  const hs = sc.hotspots[id];
+
+  document.getElementById('inspTitle').textContent = hs.title;
+  document.getElementById('inspSubtitle').textContent = hs.subtitle;
+  document.getElementById('inspEvidence').textContent = hs.evidence;
+  document.getElementById('inspQuestion').textContent = hs.question;
+  document.getElementById('inspWisdom').textContent = hs.wisdom;
+
+  const fb = document.getElementById('inspFeedback');
+  fb.className = 'feedback-box';
+  fb.textContent = '';
+
+  const optWrap = document.getElementById('inspOptions');
+  optWrap.innerHTML = '';
+  hs.options.forEach((opt, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.textContent = `${String.fromCharCode(65 + idx)}. ${opt.text}`;
+    btn.onclick = () => handleOptionClick(id, opt, btn);
+    optWrap.appendChild(btn);
+  });
+
+  for (let i = 1; i <= 4; i++) {
+    const chip = document.getElementById(`chip${i}`);
+    chip.className = 'step-chip';
+    if (solvedHotspots.has(i)) chip.classList.add('done');
+    if (i === id) chip.classList.add('curr');
+  }
+}
+
+function handleOptionClick(hotspotId, opt, btnEl) {
+  document.querySelectorAll('#inspOptions .opt-btn').forEach(b => {
+    b.classList.remove('selected-correct', 'selected-wrong');
+  });
+
+  const fb = document.getElementById('inspFeedback');
+  if (opt.correct) {
+    btnEl.classList.add('selected-correct');
+    fb.className = 'feedback-box show good';
+    fb.innerHTML = `✅ <strong>Analisis Tepat!</strong> ${opt.msg}`;
+    solvedHotspots.add(hotspotId);
+    document.getElementById(`dk${hotspotId}`).classList.add('lit');
+    document.getElementById(`chip${hotspotId}`).classList.add('done');
+    document.getElementById('scoreDisplay').textContent = `${solvedHotspots.size} / 4`;
+    playTone(660, 0.16);
+    setTimeout(() => playTone(880, 0.2), 120);
+
+    if (solvedHotspots.size === 4) {
+      document.getElementById('dkStatusText').textContent = "Seluruh 4 Panel Damarkurung menyala! Lanjutkan ke Matriks Prioritas.";
+    }
+  } else {
+    btnEl.classList.add('selected-wrong');
+    fb.className = 'feedback-box show warn';
+    fb.innerHTML = `⚠️ <strong>Tinjau Ulang Sinyal:</strong> ${opt.msg}`;
+    playTone(240, 0.2);
+  }
+}
+
+function goNextHotspot() {
+  if (activeHotspot < 4) {
+    focusCamera(activeHotspot + 1);
+  } else {
+    switchView('evalView');
+  }
+}
+
+// ==================== WEBAR CAMERA & 3D OBJECT SCANNER ====================
+const arCanvas = document.getElementById('arObjectCanvas');
+const arCtx = arCanvas.getContext('2d');
+
+function selectArObject(idx, btnEl) {
+  arObjectIndex = idx;
+  const obj = arObjects[idx];
+  document.getElementById('arObjTitle').textContent = obj.title;
+  document.getElementById('arObjDesc').textContent = obj.desc;
+  document.getElementById('arXrayBadge').textContent = obj.xray;
+  document.querySelectorAll('#arView .preset-btn').forEach(b => b.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
+  playTone(580, 0.1);
+}
+
+function toggleArXray() {
+  arXray = !arXray;
+  document.getElementById('arXrayBadge').style.display = arXray ? 'block' : 'none';
+  playTone(arXray ? 740 : 420, 0.12);
+}
+
+async function toggleRealCamera() {
+  const video = document.getElementById('arVideo');
+  const simBg = document.getElementById('arSimBg');
+  const btn = document.getElementById('camToggleBtn');
+
+  if (arStream) {
+    arStream.getTracks().forEach(t => t.stop());
+    arStream = null;
+    video.style.display = 'none';
+    simBg.style.display = 'block';
+    btn.textContent = '📷 Aktifkan Kamera Nyata';
+    return;
+  }
+
+  try {
+    arStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    video.srcObject = arStream;
+    video.style.display = 'block';
+    simBg.style.display = 'none';
+    btn.textContent = '⏹️ Matikan Kamera';
+  } catch (err) {
+    alert('Kamera tidak tersedia atau izin ditolak pada perangkat ini. Mode Simulasi Meja Klinis AR tetap aktif dan siap digunakan.');
+  }
+}
+
+function renderArObjectLoop(now) {
+  const w = arCanvas.width;
+  const h = arCanvas.height;
+  arCtx.clearRect(0, 0, w, h);
+
+  const angle = now * 0.0018;
+  const obj = arObjects[arObjectIndex];
+  const cx = w / 2;
+  const cy = h / 2 + 8;
+  const s = arScale;
+
+  arCtx.strokeStyle = 'rgba(56, 189, 248, 0.55)';
+  arCtx.lineWidth = 2;
+  arCtx.beginPath();
+  arCtx.ellipse(cx, cy + 48 * s, 64 * s, 18 * s, 0, 0, Math.PI * 2);
+  arCtx.stroke();
+
+  if (obj.shape === 'vial') {
+    const vw = 38 * s;
+    const vh = 68 * s;
+    const wobble = Math.sin(angle) * 6;
+    arCtx.fillStyle = 'rgba(248, 250, 252, 0.9)';
+    arCtx.strokeStyle = '#94a3b8';
+    arCtx.lineWidth = 2;
+    arCtx.beginPath();
+    arCtx.roundRect(cx - vw / 2 + wobble, cy - vh / 2, vw, vh, 8);
+    arCtx.fill();
+    arCtx.stroke();
+
+    arCtx.fillStyle = arXray ? '#dc2626' : '#f59e0b';
+    arCtx.fillRect(cx - vw / 2 + wobble, cy - 12 * s, vw, 24 * s);
+    arCtx.fillStyle = '#fff';
+    arCtx.font = `bold ${Math.round(9 * s)}px sans-serif`;
+    arCtx.textAlign = 'center';
+    arCtx.fillText('INSULIN 16U', cx + wobble, cy + 3 * s);
+
+    arCtx.fillStyle = '#0284c7';
+    arCtx.fillRect(cx - 12 * s + wobble, cy - vh / 2 - 12 * s, 24 * s, 12 * s);
+  } else if (obj.shape === 'band') {
+    const rx = 68 * s;
+    const ry = 28 * s;
+    arCtx.strokeStyle = '#38bdf8';
+    arCtx.lineWidth = 14 * s;
+    arCtx.beginPath();
+    arCtx.ellipse(cx, cy, rx, ry, Math.sin(angle) * 0.25, 0, Math.PI * 2);
+    arCtx.stroke();
+
+    arCtx.fillStyle = '#fff';
+    arCtx.fillRect(cx - 46 * s, cy - 12 * s, 92 * s, 24 * s);
+    arCtx.fillStyle = '#0f172a';
+    arCtx.font = `bold ${Math.round(9.5 * s)}px sans-serif`;
+    arCtx.textAlign = 'center';
+    arCtx.fillText('NY. SITI AMINAH / 4A', cx, cy + 3 * s);
+  } else {
+    for (let i = -3; i <= 3; i++) {
+      const ax = cx + i * 16 * s + Math.sin(angle + i) * 3;
+      const ay = cy - 18 * s;
+      arCtx.fillStyle = '#f59e0b';
+      arCtx.beginPath();
+      arCtx.roundRect(ax - 5 * s, ay, 10 * s, 44 * s, 3);
+      arCtx.fill();
+      arCtx.fillStyle = '#fef08a';
+      arCtx.beginPath();
+      arCtx.moveTo(ax - 3 * s, ay);
+      arCtx.lineTo(ax, ay - 14 * s);
+      arCtx.lineTo(ax + 3 * s, ay);
+      arCtx.fill();
+    }
+  }
+
+  requestAnimationFrame(renderArObjectLoop);
+}
+
+// ==================== GENAI MUTATOR & EVALUATOR ====================
+function renderScenarioData() {
+  const sc = scenarios[currentScenarioIndex];
+  document.getElementById('scenarioBadge').textContent = sc.badge;
+  document.getElementById('scenarioTitle').textContent = sc.title;
+  document.getElementById('scenarioBrief').textContent = sc.brief;
+  document.getElementById('aiNarrative').textContent = sc.brief;
+
+  const tbody = document.getElementById('aiTableBody');
+  tbody.innerHTML = '';
+  sc.rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><strong>${r[0]}</strong></td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td><span class="badge-warn">${r[4]}</span></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function generateAiScenario() {
+  const domain = document.getElementById('aiDomain').value;
+  const wisdom = document.getElementById('aiWisdom').value;
+
+  if (domain === 'transfusion') {
+    currentScenarioIndex = 1;
+  } else if (domain === 'insulin') {
+    currentScenarioIndex = 0;
+  } else {
+    const isHais = domain === 'hais';
+    scenarios[2] = {
+      badge: `Kasus Sintesis GenAI • ${isHais ? 'Surveilans HAIs & Mutu Bedah' : 'Early Warning Score & Respons IGD'}`,
+      title: isHais ? "Instalasi Bedah Sentral — RS Wali Songo Gresik" : "Instalasi Gawat Darurat — RS Petro Medika",
+      brief: isHais
+        ? "Terjadi 4 kasus Infeksi Daerah Operasi (IDO) bersih dalam 2 minggu, padahal INM Kepatuhan Kebersihan Tangan dilaporkan 97,8% dan laporan insiden PPI = 0. Log farmasi menunjukkan pemakaian antibiotik lini kedua melonjak 3x lipat."
+        : "Terjadi 2 kasus henti jantung mendadak di ruang observasi IGD, sementara INM Waktu Tanggap Pelayanan Gawat Darurat tercatat 98,5% (≤ 5 menit). Audit rekam medis menunjukkan pengisian skor EWS malam hari sering kosong.",
+      ampouleCount: isHais ? 8 : 5,
+      fridgeClutter: true,
+      rows: isHais ? [
+        ["INM: Kepatuhan Kebersihan Tangan", "96,5%", "97,2%", "97,8%", "Bias Observasi Terjadwal"],
+        ["Angka Infeksi Daerah Operasi (IDO)", "0,5%", "1,2%", "4,8%", "Sinyal KLB / Outbreak Lokal"],
+        ["Log Farmasi: Meropenem / Antibiotik Cadangan", "3 vial", "5 vial", "14 vial", "Proxy Signal Infeksi Pasca-Bedah"],
+        ["Kepatuhan Sterilisasi & Profilaksis Tepat Waktu", "94%", "89%", "81%", "Sinyal Kegagalan Bundle PPI"]
+      ] : [
+        ["INM: Waktu Tanggap Pelayanan IGD", "98,0%", "98,3%", "98,5%", "Hanya Mengukur Triase Awal"],
+        ["Kejadian Henti Jantung (Code Blue) Observasi", "0", "0", "2", "Sentinel / KTD Berat"],
+        ["Log Farmasi: Epinefrin / Norepinefrin Darurat", "2 amp", "3 amp", "9 amp", "Proxy Signal Perburukan Terlambat"],
+        ["Kelengkapan Pemantauan Early Warning Score", "91%", "84%", "72%", "Sinyal Kegagalan Monitoring"]
+      ],
+      hotspots: scenarios[0].hotspots
+    };
+    currentScenarioIndex = 2;
+  }
+
+  solvedHotspots.clear();
+  for (let i = 1; i <= 4; i++) document.getElementById(`dk${i}`).classList.remove('lit');
+  document.getElementById('scoreDisplay').textContent = '0 / 4';
+  renderScenarioData();
+  selectHotspot(1);
+
+  const wisdomMap = {
+    damarkurung: "Lentera Damarkurung diaktifkan sebagai pemandu deteksi sinyal di balik bias indikator.",
+    tepaselira: "Prinsip Tepa Selira diaktifkan sebagai standar evaluasi Just Culture.",
+    guyub: "Nilai Guyub Rukun diaktifkan untuk menyelaraskan kolaborasi lintas unit RS."
+  };
+  document.getElementById('dkStatusText').textContent = wisdomMap[wisdom];
+  playTone(620, 0.14);
+  setTimeout(() => playTone(780, 0.18), 130);
+}
+
+function runGenAiEvaluation() {
+  const p1 = document.getElementById('decPriority1').value;
+  const sig = document.getElementById('decSignal').value;
+  const cul = document.getElementById('decCulture').value;
+  const ref = document.getElementById('decReflection').value.trim();
+
+  if (!p1 || !sig || !cul) {
+    alert('Silakan lengkapi pilihan pada butir 1, 2, dan 3 terlebih dahulu sebelum menjalankan evaluasi GenAI.');
+    return;
+  }
+
+  let score = 0;
+  let notes = [];
+
+  if (p1 === 'system_signal') {
+    score += 35;
+    notes.push("✅ <strong>Penentuan Prioritas (35/35):</strong> Anda tepat memprioritaskan perbaikan sistem pengelolaan obat High-Alert dan validasi audit lintas shift daripada mencari kambing hitam.");
+  } else {
+    notes.push("⚠️ <strong>Penentuan Prioritas (10/35):</strong> Keputusan masih terjebak pada pendekatan punitif/administratif yang tidak menyentuh akar masalah sistemik.");
+  }
+
+  if (sig === 'correct_sig') {
+    score += 35;
+    notes.push("✅ <strong>Deteksi Sinyal vs Bias Data (35/35):</strong> Analisis tajam dalam membedakan KTD berat/Sentinel, bias observasi INM 99,2% (PMK 30/2022), serta proxy signal pada log farmasi.");
+  } else {
+    notes.push("⚠️ <strong>Deteksi Sinyal vs Bias Data (10/35):</strong> Angka INM yang tinggi belum menjamin keamanan apabila metode samplingnya bias.");
+  }
+
+  if (cul === 'just_ok') {
+    score += 30;
+    notes.push("✅ <strong>Etika Just Culture & Kewenangan (30/30):</strong> Selaras dengan Permenkes No. 11/2017 (RCA ≤ 45 hari, open disclosure, dan pelaporan non-punitive) serta filosofi Tepa Selira.");
+  } else {
+    notes.push("⚠️ <strong>Etika Just Culture & Kewenangan (10/30):</strong> Pemotongan remunerasi akan memperparah fenomena gunung es (staf takut melapor KNC).");
+  }
+
+  const refFeedback = ref.length >= 20
+    ? `<em>Catatan Refleksi Anda:</em> "${ref}" — Menunjukkan internalisasi nilai kearifan lokal yang kuat dalam pengambilan keputusan manajerial.`
+    : `<em>Saran Penguatan Refleksi:</em> Tuliskan refleksi lebih mendalam mengenai bagaimana nilai Damarkurung/Tepa Selira mengubah cara Anda memandang laporan insiden.`;
+
+  const resBox = document.getElementById('aiEvalResult');
+  const resContent = document.getElementById('aiEvalContent');
+  resBox.style.display = 'block';
+  resContent.innerHTML = `
+    <div style="background:var(--navy-900);color:#fef3c7;padding:10px 14px;border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+      <span><strong>Skor Ketercapaian Sub-CPMK5 (GenAI Rubric R10):</strong></span>
+      <span style="font-size:18px;font-weight:800;">${score} / 100</span>
+    </div>
+    <ul style="padding-left:18px;margin-bottom:10px;">
+      ${notes.map(n => `<li style="margin-bottom:6px;">${n}</li>`).join('')}
+    </ul>
+    <p style="background:#fffbeb;padding:9px 12px;border-radius:7px;border:1px solid #fcd34d;">${refFeedback}</p>
+  `;
+  playTone(700, 0.25);
+}
+</script>
+</body>
+</html>
